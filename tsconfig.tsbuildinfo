@@ -1,1 +1,0 @@
-{"root":["./src/app.tsx","./src/commands.ts","./src/main.tsx","./src/patch.ts","./src/audio/effects.ts","./src/audio/engine.ts","./src/audio/params.ts","./src/components/console.tsx","./src/components/fxblock.tsx","./src/components/meters.tsx","./src/components/param.tsx","./src/components/scope.tsx","./src/components/useframe.ts","./vite.config.ts"],"version":"5.9.3"}

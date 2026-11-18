@@ -5,6 +5,7 @@ import { MASTER, SOURCE } from './audio/params'
 import { runCommand, type LogLine } from './commands'
 import { Console } from './components/Console'
 import { FxBlock } from './components/FxBlock'
+import { Keys } from './components/Keys'
 import { Meters } from './components/Meters'
 import { Param } from './components/Param'
 import { Scope } from './components/Scope'
@@ -29,11 +30,7 @@ export default function App() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).closest('input, textarea, button, select')) return
-      if (e.code === 'Space') {
-        e.preventDefault()
-        toggle(!engine.running)
-      }
+      if (e.target instanceof Element && e.target.closest('input:not([type=range]), textarea, select')) return
       if (e.key === '/') {
         e.preventDefault()
         cmdRef.current?.focus()
@@ -41,7 +38,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [toggle])
+  }, [])
 
   const run = (line: string) => {
     if (line.trim() === 'clear') return setLog([])
@@ -61,7 +58,7 @@ export default function App() {
         </span>
         <span className="spacer" />
         <button className={running ? 'run on' : 'run'} onClick={() => toggle(!running)}>
-          {running ? '■ stop' : '▶ start'} <span className="dim">[space]</span>
+          {running ? '■ stop' : '▶ start'}
         </button>
       </header>
 
@@ -117,6 +114,8 @@ export default function App() {
           </div>
         </section>
       </main>
+
+      <Keys src={patch.src} keys={patch.keys} dispatch={dispatch} start={() => toggle(true)} />
 
       <Console log={log} onRun={run} inputRef={cmdRef} />
     </div>

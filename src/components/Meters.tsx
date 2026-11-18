@@ -8,8 +8,8 @@ const FLOOR = -60
 function text(peak: number) {
   const db = 20 * Math.log10(peak)
   const n = Math.round(Math.max(0, Math.min(1, (db - FLOOR) / -FLOOR)) * BAR)
-  const value = db <= FLOOR ? ' -inf' : db.toFixed(1).padStart(5)
-  return `[${'#'.repeat(n)}${'.'.repeat(BAR - n)}] ${value}dB`
+  const value = db <= FLOOR ? '-inf' : `${db.toFixed(1)}dB`
+  return `[${'#'.repeat(n)}${'.'.repeat(BAR - n)}] ${value.padStart(7)}`
 }
 
 export function Meters() {

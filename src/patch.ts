@@ -1,11 +1,11 @@
 import { FX, type FxType } from './audio/effects'
-import { defaults, MASTER, merge, SOURCE, type Params } from './audio/params'
+import { defaults, KEYS, MASTER, merge, SOURCE, type Params } from './audio/params'
 
 export type FxState = { id: string; type: FxType; on: boolean; open: boolean; p: Params }
-export type Patch = { src: Params; master: Params; chain: FxState[] }
+export type Patch = { src: Params; master: Params; keys: Params; chain: FxState[] }
 
 export type Action =
-  | { t: 'src' | 'master'; key: string; v: number }
+  | { t: 'src' | 'master' | 'keys'; key: string; v: number }
   | { t: 'fx'; id: string; key: string; v: number }
   | { t: 'add'; type: FxType; at?: number }
   | { t: 'remove'; id: string }
@@ -27,6 +27,7 @@ export function initialPatch(): Patch {
   return {
     src: defaults(SOURCE),
     master: defaults(MASTER),
+    keys: defaults(KEYS),
     chain: [makeFx('eq'), makeFx('drive', false), makeFx('comp'), makeFx('pingpong', false), makeFx('reverb')],
   }
 }
@@ -38,6 +39,7 @@ export function reducer(state: Patch, a: Action): Patch {
   switch (a.t) {
     case 'src':
     case 'master':
+    case 'keys':
       return { ...state, [a.t]: { ...state[a.t], [a.key]: a.v } }
     case 'fx':
       return { ...state, chain: mapFx(state.chain, a.id, (fx) => ({ ...fx, p: { ...fx.p, [a.key]: a.v } })) }
@@ -80,7 +82,7 @@ export function loadPatch(): Patch {
         open: fx.open !== false,
         p: merge(FX[fx.type].params, fx.p),
       }))
-    return { src: merge(SOURCE, raw.src), master: merge(MASTER, raw.master), chain }
+    return { src: merge(SOURCE, raw.src), master: merge(MASTER, raw.master), keys: merge(KEYS, raw.keys), chain }
   } catch {
     return initialPatch()
   }

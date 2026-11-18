@@ -119,9 +119,16 @@ export const SOURCE: ParamSpec[] = [
   { key: 'freq', label: 'freq', min: 20, max: 20000, value: 110, unit: 'Hz', log: true },
   { key: 'detune', label: 'detune', min: -100, max: 100, value: 0, unit: 'ct', step: 1 },
   { key: 'level', label: 'level', min: -48, max: 0, value: -12, unit: 'dB', step: 0.1 },
-  { key: 'gate', label: 'gate', options: ['hold', 'pulse'], value: 1 },
+  { key: 'gate', label: 'gate', options: ['hold', 'pulse', 'key'], value: 1 },
   { key: 'rate', label: 'rate', min: 0.25, max: 16, value: 2, unit: 'Hz', log: true },
   { key: 'duty', label: 'duty', min: 0.02, max: 0.95, value: 0.2, unit: '%', step: 0.01 },
+]
+
+export const KEYS: ParamSpec[] = [
+  { key: 'mode', label: 'mapping', options: ['notes', 'piano', 'trumpet'], value: 0 },
+  { key: 'a4', label: 'A4', min: 438, max: 448, value: 440, unit: 'Hz', step: 1 },
+  { key: 'oct', label: 'octave', min: 1, max: 7, value: 4, step: 1 },
+  { key: 'partial', label: 'partial', min: 2, max: 8, value: 4, step: 1 },
 ]
 
 export const MASTER: ParamSpec[] = [

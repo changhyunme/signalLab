@@ -1,5 +1,5 @@
 import { FX, FX_TYPES, type FxType } from './audio/effects'
-import { format, MASTER, parseValue, SOURCE, type ParamSpec, type Params } from './audio/params'
+import { format, KEYS, MASTER, parseValue, SOURCE, type ParamSpec, type Params } from './audio/params'
 import type { Action, Patch } from './patch'
 
 export type LogLine = { text: string; kind?: 'cmd' | 'err' | 'dim' }
@@ -11,12 +11,12 @@ type Env = {
 }
 
 const HELP = [
-  'start | stop                      audio on/off (space)',
+  'start | stop                      audio on/off',
   'wave <sine|square|saw|tri|noise>',
   'freq <hz>                         e.g. freq 440, freq 1.2k',
   'add <type> [pos]                  ' + FX_TYPES.join(' '),
   'rm <n> | mv <n> <pos> | on <n> | off <n>',
-  'set <src|out|n> <param> <value>   e.g. set 3 ratio 8',
+  'set <src|out|keys|n> <param> <value>   e.g. set 3 ratio 8, set keys a4 442',
   'ls                                chain and values',
   'reset | clear',
 ]
@@ -99,6 +99,7 @@ export function runCommand(line: string, env: Env): LogLine[] {
     case 'set': {
       const [target, name, value] = args
       if (target === 'src') return setParam(SOURCE, name, value, (key, v) => dispatch({ t: 'src', key, v }))
+      if (target === 'keys') return setParam(KEYS, name, value, (key, v) => dispatch({ t: 'keys', key, v }))
       if (target === 'out' || target === 'master')
         return setParam(MASTER, name, value, (key, v) => dispatch({ t: 'master', key, v }))
       const fx = fxAt(target)
@@ -110,6 +111,7 @@ export function runCommand(line: string, env: Env): LogLine[] {
         `src  ${describe(SOURCE, patch.src)}`,
         ...chain.map((fx, i) => `${pad(i + 1)}   ${fx.type.padEnd(9)}${fx.on ? 'on ' : 'off'}  ${describe(FX[fx.type].params, fx.p)}`),
         `out  ${describe(MASTER, patch.master)}`,
+        `keys ${describe(KEYS, patch.keys)}`,
       )
     case 'reset':
       dispatch({ t: 'reset' })

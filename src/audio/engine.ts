@@ -1,5 +1,5 @@
 import { FX, type FxModule, type FxType } from './effects'
-import { dbToGain, defaults, MASTER, SOURCE, type Params } from './params'
+import { dbToGain, defaults, MASTER, SOURCE, type Drum, type Params } from './params'
 
 export type ChainItem = { id: string; type: FxType; on: boolean; p: Params }
 
@@ -15,6 +15,7 @@ type Nodes = {
   noiseGain: GainNode
   amp: GainNode
   level: GainNode
+  head: GainNode
   master: GainNode
   limiter: DynamicsCompressorNode
   out: GainNode
@@ -23,7 +24,8 @@ type Nodes = {
 }
 
 /**
- * oscs (1–3 voices) / noise → gate → level → [effects…] → master → limiter → out
+ * oscs (1–3 voices) / noise → gate → level ┐
+ *                       percussion hits ──┴→ head → [effects…] → master → limiter → out
  * The graph is built on the first start (browsers need a user gesture).
  */
 class Engine {
@@ -62,6 +64,7 @@ class Engine {
       noiseGain: ctx.createGain(),
       amp: ctx.createGain(),
       level: ctx.createGain(),
+      head: ctx.createGain(),
       master: ctx.createGain(),
       limiter: ctx.createDynamicsCompressor(),
       out: ctx.createGain(),
@@ -77,7 +80,7 @@ class Engine {
     oscs.forEach((osc, i) => osc.connect(n.voices[i]).connect(n.oscGain))
     n.oscGain.connect(n.amp)
     noise.connect(n.noiseGain).connect(n.amp)
-    n.amp.connect(n.level)
+    n.amp.connect(n.level).connect(n.head)
     n.master.connect(n.limiter)
     n.limiter.connect(analyser)
     n.limiter.connect(split)
@@ -194,6 +197,89 @@ class Engine {
     for (const osc of this.n.oscs) this.to(osc.detune, this.src.detune + cents, tc)
   }
 
+  /**
+   * One-shot percussion built from oscillators only: a pitch-swept sine kick,
+   * a triangle body plus inharmonic squares for the snare, and the six-square
+   * metallic cluster (as on analog drum machines) for the hi-hat.
+   */
+  hit(drum: Drum, p: Params) {
+    const ctx = this.ctx
+    if (!ctx || !this.running) return
+    const t = ctx.currentTime + 0.005
+    const out = ctx.createGain()
+    const nodes: AudioNode[] = [out]
+    const oscs: OscillatorNode[] = []
+    const tone = (type: OscillatorType, freq: number) => {
+      const o = ctx.createOscillator()
+      o.type = type
+      o.frequency.value = freq
+      oscs.push(o)
+      nodes.push(o)
+      return o
+    }
+    const env = (peak: number, decay: number) => {
+      const g = ctx.createGain()
+      g.gain.setValueAtTime(0.0001, t)
+      g.gain.exponentialRampToValueAtTime(Math.max(peak, 0.0002), t + 0.002)
+      g.gain.exponentialRampToValueAtTime(0.0001, t + decay)
+      nodes.push(g)
+      return g
+    }
+    const filter = (type: BiquadFilterType, freq: number, q = 0.7) => {
+      const f = ctx.createBiquadFilter()
+      f.type = type
+      f.frequency.value = freq
+      f.Q.value = q
+      nodes.push(f)
+      return f
+    }
+    /** Sums square waves at the given multiples of `base`, scaled to unit level. */
+    const cluster = (base: number, ratios: number[]) => {
+      const mix = ctx.createGain()
+      mix.gain.value = 1 / ratios.length
+      nodes.push(mix)
+      for (const r of ratios) tone('square', base * r).connect(mix)
+      return mix
+    }
+
+    let length: number
+    if (drum === 'kick') {
+      const body = tone('sine', p.kickTune * 3.5)
+      body.frequency.setValueAtTime(p.kickTune * 3.5, t)
+      body.frequency.exponentialRampToValueAtTime(p.kickTune, t + 0.07)
+      body.connect(env(1, p.kickDecay)).connect(out)
+      tone('triangle', 1800).connect(env(0.25, 0.012)).connect(out)
+      out.gain.value = dbToGain(p.kickLevel)
+      length = p.kickDecay
+    } else if (drum === 'snare') {
+      const body = tone('triangle', p.snareTune * 1.4)
+      body.frequency.setValueAtTime(p.snareTune * 1.4, t)
+      body.frequency.exponentialRampToValueAtTime(p.snareTune, t + 0.03)
+      body.connect(env(1 - p.snareSnap * 0.5, p.snareDecay * 0.6)).connect(out)
+      cluster(p.snareTune, [4.3, 5.7, 7.1, 8.9, 10.3, 12.7])
+        .connect(filter('highpass', 1800))
+        .connect(env(p.snareSnap * 1.6, p.snareDecay))
+        .connect(out)
+      out.gain.value = dbToGain(p.snareLevel)
+      length = p.snareDecay
+    } else {
+      cluster(p.hatTone, [2, 3, 4.16, 5.43, 6.79, 8.21])
+        .connect(filter('bandpass', 10000, 1))
+        .connect(filter('highpass', 7000))
+        .connect(env(2.5, p.hatDecay))
+        .connect(out)
+      out.gain.value = dbToGain(p.hatLevel)
+      length = p.hatDecay
+    }
+
+    out.connect(this.n.head)
+    for (const o of oscs) {
+      o.start(t)
+      o.stop(t + length + 0.05)
+    }
+    oscs[0].onended = () => nodes.forEach((node) => node.disconnect())
+  }
+
   /** Opens or closes the gate in key mode (note on / off). */
   hold(on: boolean) {
     this.held = on
@@ -254,9 +340,9 @@ class Engine {
     const route = this.chain.filter((c) => c.on).map((c) => c.id).join()
     if (!force && route === this.route) return
     this.route = route
-    this.n.level.disconnect()
+    this.n.head.disconnect()
     for (const m of this.mods.values()) m.mod.output.disconnect()
-    let tail: AudioNode = this.n.level
+    let tail: AudioNode = this.n.head
     for (const c of this.chain) {
       if (!c.on) continue
       const { mod } = this.mods.get(c.id)!

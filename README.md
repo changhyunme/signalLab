@@ -40,6 +40,10 @@ Click the `keys` panel title (or right-click the panel) to pick a mapping. A4 is
 | `←` / `→` | partial down / up (2–8) |
 | `↑` / `↓` held | bend up / down, back to pitch on release |
 
+## Percussion
+
+Oscillators only, mixed into the effect chain. `z` kick (swept sine), `x` snare (triangle body + inharmonic squares), `v` hi-hat (six-square metallic cluster). Hitting a pad selects it for editing tune/tone, decay, snap and level.
+
 ## Commands
 
 ```

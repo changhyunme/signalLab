@@ -7,6 +7,7 @@ import { Console } from './components/Console'
 import { FxBlock } from './components/FxBlock'
 import { Keys } from './components/Keys'
 import { Meters } from './components/Meters'
+import { Perc } from './components/Perc'
 import { Param } from './components/Param'
 import { Scope } from './components/Scope'
 import { loadPatch, reducer, savePatch } from './patch'
@@ -115,7 +116,10 @@ export default function App() {
         </section>
       </main>
 
-      <Keys src={patch.src} keys={patch.keys} dispatch={dispatch} start={() => toggle(true)} />
+      <div className="bottom">
+        <Keys src={patch.src} keys={patch.keys} dispatch={dispatch} start={() => toggle(true)} />
+        <Perc src={patch.src} perc={patch.perc} dispatch={dispatch} start={() => toggle(true)} />
+      </div>
 
       <Console log={log} onRun={run} inputRef={cmdRef} />
     </div>

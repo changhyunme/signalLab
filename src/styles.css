@@ -545,3 +545,30 @@ button:disabled {
     font-size: 0.75em;
   }
 }
+
+/* keys + perc */
+
+.bottom {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 22px 16px;
+}
+
+@media (min-width: 960px) {
+  .bottom {
+    grid-template-columns: minmax(0, 1fr) 49ch;
+  }
+}
+
+.keyrow.pads {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.pads .key {
+  min-height: 4.6em;
+  justify-content: flex-end;
+}
+
+.key.sel {
+  border-color: var(--dim);
+}

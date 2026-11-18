@@ -131,6 +131,23 @@ export const KEYS: ParamSpec[] = [
   { key: 'partial', label: 'partial', min: 2, max: 8, value: 4, step: 1 },
 ]
 
+export const DRUMS = ['kick', 'snare', 'hat'] as const
+export type Drum = (typeof DRUMS)[number]
+
+/** Percussion voices; keys are prefixed with the drum they belong to. */
+export const PERC: ParamSpec[] = [
+  { key: 'kickTune', label: 'tune', min: 30, max: 120, value: 50, unit: 'Hz', log: true },
+  { key: 'kickDecay', label: 'decay', min: 0.1, max: 1.5, value: 0.45, unit: 's', log: true },
+  { key: 'kickLevel', label: 'level', min: -24, max: 6, value: 0, unit: 'dB', step: 0.1 },
+  { key: 'snareTune', label: 'tune', min: 120, max: 400, value: 190, unit: 'Hz', log: true },
+  { key: 'snareDecay', label: 'decay', min: 0.05, max: 0.6, value: 0.2, unit: 's', log: true },
+  { key: 'snareSnap', label: 'snap', min: 0, max: 1, value: 0.6, unit: '%', step: 0.01 },
+  { key: 'snareLevel', label: 'level', min: -24, max: 6, value: -3, unit: 'dB', step: 0.1 },
+  { key: 'hatTone', label: 'tone', min: 25, max: 80, value: 40, unit: 'Hz', log: true },
+  { key: 'hatDecay', label: 'decay', min: 0.02, max: 0.6, value: 0.06, unit: 's', log: true },
+  { key: 'hatLevel', label: 'level', min: -24, max: 6, value: -6, unit: 'dB', step: 0.1 },
+]
+
 export const MASTER: ParamSpec[] = [
   { key: 'vol', label: 'volume', min: -48, max: 6, value: 0, unit: 'dB', step: 0.1 },
   { key: 'limit', label: 'limiter', options: ['on', 'off'], value: 0 },
